@@ -1,0 +1,32 @@
+{
+  "name": "ai-ci-cd-pipeline-wizard",
+  "version": "1.0.0",
+  "description": "AI-powered CI/CD pipeline configuration generator",
+  "main": "index.js",
+  "scripts": {
+    "dev:backend": "tsx watch backend/server.ts",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:backend": "tsc -p tsconfig.backend.json",
+    "build:frontend": "cd frontend && npm run build",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "keywords": ["ci/cd", "pipeline", "generator", "ai"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "fastify": "^4.28.1",
+    "@fastify/cors": "^9.0.1",
+    "openai": "^4.67.3",
+    "dotenv": "^16.4.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "prisma": "^5.22.0",
+    "typescript": "^5.5.3",
+    "tsx": "^4.16.2"
+  }
+}

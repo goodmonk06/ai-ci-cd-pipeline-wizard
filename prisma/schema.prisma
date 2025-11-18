@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model RepoProfile {
+  id              String   @id @default(cuid())
+  name            String
+  githubUrl       String?
+  language        String   // e.g., "TypeScript", "JavaScript"
+  framework       String   // e.g., "Next.js", "NestJS", "Express"
+  usesDB          Boolean  @default(false)
+  usesDocker      Boolean  @default(false)
+  deployTargetsJson String @default("[]") // JSON array of deploy targets: ["railway", "vercel"]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  generationJobs  GenerationJob[]
+
+  @@map("repo_profiles")
+}
+
+model PipelineTemplate {
+  id       String @id @default(cuid())
+  name     String
+  provider String // "github-actions", "railway", "vercel"
+  yamlText String @db.Text
+  metaJson String @default("{}") // Additional metadata as JSON
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("pipeline_templates")
+}
+
+model GenerationJob {
+  id                String   @id @default(cuid())
+  repoProfileId     String
+  generatedFilesJson String @db.Text // JSON object with file paths and content
+  createdAt         DateTime @default(now())
+
+  repoProfile       RepoProfile @relation(fields: [repoProfileId], references: [id], onDelete: Cascade)
+
+  @@map("generation_jobs")
+}
