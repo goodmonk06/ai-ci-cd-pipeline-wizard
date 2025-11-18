@@ -4,13 +4,30 @@
   "description": "AI-powered CI/CD pipeline configuration generator",
   "main": "index.js",
   "scripts": {
+    "dev": "npm run dev:backend",
     "dev:backend": "tsx watch backend/server.ts",
     "dev:frontend": "cd frontend && npm run dev",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build": "npm run build:backend",
     "build:backend": "tsc -p tsconfig.backend.json",
     "build:frontend": "cd frontend && npm run build",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "start": "node dist/backend/server.js",
+    "start:frontend": "cd frontend && npm start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit && cd frontend && npm run lint",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset --force",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "docker:build": "docker compose build"
   },
   "keywords": ["ci/cd", "pipeline", "generator", "ai"],
   "author": "",
@@ -21,12 +38,19 @@
     "@fastify/cors": "^9.0.1",
     "openai": "^4.67.3",
     "dotenv": "^16.4.5",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "commander": "^11.1.0"
+  },
+  "bin": {
+    "cicd-wizard": "./bin/cicd-wizard.ts"
   },
   "devDependencies": {
     "@types/node": "^20.14.9",
+    "@vitest/ui": "^1.6.0",
+    "concurrently": "^8.2.2",
     "prisma": "^5.22.0",
     "typescript": "^5.5.3",
-    "tsx": "^4.16.2"
+    "tsx": "^4.16.2",
+    "vitest": "^1.6.0"
   }
 }

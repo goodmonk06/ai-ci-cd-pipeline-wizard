@@ -19,33 +19,86 @@ model RepoProfile {
   usesDB          Boolean  @default(false)
   usesDocker      Boolean  @default(false)
   deployTargetsJson String @default("[]") // JSON array of deploy targets: ["railway", "vercel"]
+  status          String   @default("active") // "active", "archived", "draft"
+  tags            String   @default("[]") // JSON array of tags
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   generationJobs  GenerationJob[]
 
   @@map("repo_profiles")
+  @@index([status])
+  @@index([framework])
 }
 
 model PipelineTemplate {
-  id       String @id @default(cuid())
-  name     String
-  provider String // "github-actions", "railway", "vercel"
-  yamlText String @db.Text
-  metaJson String @default("{}") // Additional metadata as JSON
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  provider    String   // "github-actions", "railway", "vercel"
+  yamlText    String   @db.Text
+  metaJson    String   @default("{}") // Additional metadata as JSON
+  category    String   @default("ci-cd") // "ci-cd", "deployment", "security", "testing"
+  isPublic    Boolean  @default(false)
+  version     String   @default("1.0.0")
+  downloads   Int      @default(0)
+  rating      Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("pipeline_templates")
+  @@index([category])
+  @@index([provider])
+  @@index([isPublic])
 }
 
 model GenerationJob {
   id                String   @id @default(cuid())
   repoProfileId     String
   generatedFilesJson String @db.Text // JSON object with file paths and content
+  status            String   @default("completed") // "completed", "failed", "pending"
+  errorMessage      String?
+  durationMs        Int?     // Generation duration in milliseconds
+  tokensUsed        Int?     // OpenAI tokens consumed
   createdAt         DateTime @default(now())
 
   repoProfile       RepoProfile @relation(fields: [repoProfileId], references: [id], onDelete: Cascade)
 
   @@map("generation_jobs")
+  @@index([status])
+  @@index([repoProfileId])
+  @@index([createdAt])
+}
+
+model ConfigPreset {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  framework   String
+  language    String
+  configJson  String   @db.Text // JSON object with preset configuration
+  isBuiltIn   Boolean  @default(false)
+  usageCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("config_presets")
+  @@index([framework])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String   // "profile.created", "generation.completed", etc.
+  entityType String   // "RepoProfile", "GenerationJob", etc.
+  entityId   String
+  metadata   String   @default("{}") // JSON object with additional context
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@map("audit_logs")
+  @@index([action])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
 }

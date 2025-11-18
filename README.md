@@ -2,66 +2,125 @@
 
 An intelligent CI/CD pipeline configuration generator powered by AI. Generate production-ready GitHub Actions workflows, Railway configurations, Vercel configs, and Dockerfiles tailored to your project's stack.
 
-## 🎯 Features
+## 📖 Overview
 
-- **AI-Powered Generation**: Uses OpenAI to create customized CI/CD configurations
-- **Multi-Platform Support**: Generate configs for GitHub Actions, Railway, and Vercel
-- **Framework Agnostic**: Supports Next.js, NestJS, Express, Fastify, React, Vue.js, Angular, and more
-- **Database Integration**: Handles PostgreSQL, MySQL, MongoDB, Redis setups
-- **Docker Support**: Generates optimized multi-stage Dockerfiles
-- **Interactive UI**: Simple wizard-style interface to configure your pipeline
-- **Instant Preview**: View and copy generated configurations immediately
+The AI CI/CD Pipeline Wizard is a full-stack application that leverages OpenAI to automatically generate customized CI/CD configurations based on your project requirements. Simply specify your framework, language, database, and deployment targets, and the wizard will create optimized pipeline configurations ready for production use.
+
+**Problem it solves:** Setting up CI/CD pipelines requires deep knowledge of various platforms and best practices. This tool democratizes that expertise by generating production-ready configurations in seconds.
 
 ## 🏗️ Tech Stack
 
 ### Backend
-- **Fastify**: High-performance Node.js web framework
-- **TypeScript**: Type-safe development
-- **Prisma**: Modern database ORM
-- **OpenAI**: LLM for intelligent config generation
-- **PostgreSQL**: Database for storing profiles and jobs
+- **Fastify** - High-performance Node.js web framework
+- **TypeScript** - Type-safe development
+- **Prisma** - Modern database ORM with type safety
+- **OpenAI GPT-4** - LLM for intelligent config generation
+- **Zod** - Schema validation
+- **PostgreSQL** - Relational database
 
 ### Frontend
-- **Next.js 14**: React framework with App Router
-- **TypeScript**: Type-safe React components
-- **Tailwind CSS**: Utility-first styling
+- **Next.js 14** - React framework with App Router
+- **TypeScript** - Type-safe React components
+- **Tailwind CSS** - Utility-first styling
+- **React Hooks** - State management
 
-## 📋 Prerequisites
+### DevOps
+- **Docker** - Containerization
+- **Docker Compose** - Multi-container orchestration
+- **Vitest** - Fast unit testing framework
 
-- Node.js 18+ and npm
-- PostgreSQL database
-- OpenAI API key
+## 🗂️ Domain Model
+
+### Core Entities
+
+**RepoProfile**
+- Represents a repository/project configuration
+- Fields: `id`, `name`, `githubUrl`, `language`, `framework`, `usesDB`, `usesDocker`, `deployTargetsJson`
+- Relationships: One-to-many with `GenerationJob`
+
+**PipelineTemplate**
+- Reusable CI/CD templates
+- Fields: `id`, `name`, `provider`, `yamlText`, `metaJson`
+- Used for seeding common configurations
+
+**GenerationJob**
+- Tracks each pipeline generation request
+- Fields: `id`, `repoProfileId`, `generatedFilesJson`, `createdAt`
+- Stores the actual generated files and their content
+
+### Entity Relationships
+
+```
+RepoProfile (1) ──< (many) GenerationJob
+```
 
 ## 🚀 Getting Started
 
-### 1. Clone the Repository
+### Prerequisites
+
+- **Node.js** 18+ and npm
+- **PostgreSQL** 15+ database
+- **OpenAI API key** (with GPT-4 access recommended)
+- **Docker & Docker Compose** (optional, for containerized setup)
+
+### Option 1: Docker Setup (Recommended)
+
+1. **Clone and setup environment**
 
 ```bash
-git clone https://github.com/yourusername/ai-ci-cd-pipeline-wizard.git
+git clone <repository-url>
 cd ai-ci-cd-pipeline-wizard
+
+# Copy environment template
+cp .env.example .env
 ```
 
-### 2. Install Dependencies
+2. **Configure environment variables**
+
+Edit `.env` and add your OpenAI API key:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@db:5432/cicd_wizard?schema=public"
+OPENAI_API_KEY="sk-your-openai-api-key-here"
+PORT=3001
+```
+
+3. **Start with Docker Compose**
+
+```bash
+# Build and start all services
+npm run docker:up
+
+# The backend will automatically run migrations on startup
+```
+
+4. **Seed the database**
+
+```bash
+# Run seed script
+npm run db:seed
+```
+
+5. **Access the application**
+
+- Backend API: http://localhost:3001
+- Health check: http://localhost:3001/health
+
+### Option 2: Local Development Setup
+
+1. **Install dependencies**
 
 ```bash
 # Install backend dependencies
 npm install
 
 # Install frontend dependencies
-cd frontend
-npm install
-cd ..
+cd frontend && npm install && cd ..
 ```
 
-### 3. Set Up Environment Variables
+2. **Setup database**
 
-Create a `.env` file in the root directory:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and add your credentials:
+Create a PostgreSQL database and update `.env`:
 
 ```env
 DATABASE_URL="postgresql://user:password@localhost:5432/cicd_wizard?schema=public"
@@ -69,224 +128,78 @@ OPENAI_API_KEY="sk-your-openai-api-key-here"
 PORT=3001
 ```
 
-### 4. Set Up the Database
+3. **Run migrations and seed**
 
 ```bash
 # Generate Prisma client
-npm run prisma:generate
+npm run db:generate
 
 # Run database migrations
-npm run prisma:migrate
+npm run db:migrate
+
+# Seed with sample data
+npm run db:seed
 ```
 
-### 5. Start the Application
+4. **Start development servers**
 
-Open two terminal windows:
-
-**Terminal 1 - Backend:**
 ```bash
-npm run dev:backend
-```
+# Terminal 1 - Backend
+npm run dev
 
-**Terminal 2 - Frontend:**
-```bash
+# Terminal 2 - Frontend
 npm run dev:frontend
+
+# Or run both concurrently
+npm run dev:all
 ```
 
-The application will be available at:
+5. **Access the application**
+
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:3001
 
-## 📖 Usage Guide
+## 🎯 Example Flow: Complete Vertical Slice
 
-### Using the Web Interface
+Here's a complete end-to-end flow demonstrating the core functionality:
 
-1. **Navigate to http://localhost:3000**
+### 1. Create a Repo Profile via API
 
-2. **Fill out the Project Configuration:**
-   - Project Name: Enter your project name
-   - Framework: Select your framework (Next.js, NestJS, etc.)
-   - Language: Choose your programming language
-   - Database: Check if you use a database and select the type
-   - Docker: Enable if you want Dockerfile generation
-   - Deploy Targets: Select Railway and/or Vercel if needed
-   - GitHub URL: Optionally provide your repository URL
-
-3. **Click "Generate Pipeline Configs"**
-
-4. **View Generated Files:**
-   - Switch between file tabs
-   - Copy individual files or download them
-   - Use the configs in your project
-
-### Example: Next.js + Prisma + Railway
-
-Here's an example configuration for a Next.js app with Prisma and Railway deployment:
-
-**Input:**
-- Project Name: `my-nextjs-app`
-- Framework: `Next.js`
-- Language: `TypeScript`
-- Uses Database: `✓` (PostgreSQL)
-- Uses Docker: `✓`
-- Deploy Targets: `Railway`
-
-**Generated Files:**
-
-#### `.github/workflows/ci.yml`
-```yaml
-name: CI
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run linting
-        run: npm run lint
-
-      - name: Run Prisma migrations
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
-        run: npx prisma migrate dev
-
-      - name: Run tests
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
-        run: npm test
-
-      - name: Build application
-        run: npm run build
-
-      - name: Build Docker image
-        run: docker build -t my-nextjs-app .
+```bash
+curl -X POST http://localhost:3001/api/profiles \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My Next.js App",
+    "language": "TypeScript",
+    "framework": "Next.js",
+    "usesDB": true,
+    "usesDocker": true,
+    "deployTargets": ["railway", "vercel"]
+  }'
 ```
 
-#### `.github/workflows/deploy-railway.yml`
-```yaml
-name: Deploy to Railway
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy to Railway
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up
-```
-
-#### `railway.json`
+Response:
 ```json
 {
-  "$schema": "https://railway.app/railway.schema.json",
-  "build": {
-    "builder": "NIXPACKS"
-  },
-  "deploy": {
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
-  }
+  "id": "clx1234...",
+  "name": "My Next.js App",
+  "language": "TypeScript",
+  "framework": "Next.js",
+  "usesDB": true,
+  "usesDocker": true,
+  "deployTargetsJson": "[\"railway\",\"vercel\"]",
+  "createdAt": "2025-01-18T00:00:00.000Z",
+  "updatedAt": "2025-01-18T00:00:00.000Z"
 }
 ```
 
-#### `Dockerfile`
-```dockerfile
-FROM node:20-alpine AS base
-
-FROM base AS deps
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-RUN npx prisma generate
-RUN npm run build
-
-FROM base AS runner
-WORKDIR /app
-ENV NODE_ENV production
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
-EXPOSE 3000
-ENV PORT 3000
-
-CMD ["node", "server.js"]
-```
-
-## 🔧 API Endpoints
-
-### Repo Profiles
-
-- `POST /api/profiles` - Create a new repo profile
-- `GET /api/profiles` - Get all repo profiles
-- `GET /api/profiles/:id` - Get a specific repo profile
-- `DELETE /api/profiles/:id` - Delete a repo profile
-
-### Generation
-
-- `POST /api/generate` - Generate pipeline configurations
-- `GET /api/generate/jobs/:id` - Get a generation job by ID
-- `GET /api/generate/profiles/:profileId/jobs` - Get all jobs for a profile
-
-### Example API Request
+### 2. Generate Pipeline Configurations
 
 ```bash
 curl -X POST http://localhost:3001/api/generate \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "my-app",
+    "name": "my-nextjs-app",
     "framework": "Next.js",
     "language": "TypeScript",
     "usesDB": true,
@@ -296,18 +209,159 @@ curl -X POST http://localhost:3001/api/generate \
   }'
 ```
 
-## 📁 Project Structure
+This will:
+- Create a new repo profile (or use existing if `repoProfileId` provided)
+- Generate CI/CD configs using OpenAI
+- Save files to `./generated/<profileId>/`
+- Return generated file contents in response
+
+### 3. List All Profiles
+
+```bash
+curl http://localhost:3001/api/profiles
+```
+
+### 4. Update a Profile
+
+```bash
+curl -X PUT http://localhost:3001/api/profiles/clx1234... \
+  -H "Content-Type: application/json" \
+  -d '{
+    "usesDocker": false,
+    "deployTargets": ["vercel"]
+  }'
+```
+
+### 5. View Generation History
+
+```bash
+curl http://localhost:3001/api/generate/profiles/clx1234.../jobs
+```
+
+### 6. Use the Web Interface
+
+Navigate to http://localhost:3000 and:
+
+1. Fill out the project configuration form
+2. Select framework, language, database options
+3. Choose deployment targets
+4. Click "Generate Pipeline Configs"
+5. View generated files in the right panel
+6. Copy or download individual files
+
+## 📚 API Documentation
+
+### Profiles Endpoints
+
+- `POST /api/profiles` - Create a new repo profile
+- `GET /api/profiles` - List all profiles
+- `GET /api/profiles/:id` - Get profile by ID
+- `PUT /api/profiles/:id` - Update a profile
+- `DELETE /api/profiles/:id` - Delete a profile
+
+### Generation Endpoints
+
+- `POST /api/generate` - Generate pipeline configurations
+- `GET /api/generate/jobs/:id` - Get generation job by ID
+- `GET /api/generate/profiles/:profileId/jobs` - Get all jobs for a profile
+
+### Health Check
+
+- `GET /health` - Server health check
+
+## 🧪 Testing
+
+The project uses Vitest for testing.
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test -- --coverage
+```
+
+Example test structure:
+
+```typescript
+// backend/lib/errors.test.ts
+describe('Error Classes', () => {
+  it('should create a ValidationError with 400 status code', () => {
+    const error = new ValidationError('Invalid input');
+    expect(error.statusCode).toBe(400);
+  });
+});
+```
+
+## 📦 Available Scripts
+
+### Development
+- `npm run dev` - Start backend development server
+- `npm run dev:frontend` - Start frontend development server
+- `npm run dev:all` - Run both backend and frontend concurrently
+
+### Building
+- `npm run build` - Build backend for production
+- `npm run build:frontend` - Build frontend for production
+
+### Running
+- `npm start` - Start production backend server
+- `npm run start:frontend` - Start production frontend server
+
+### Database
+- `npm run db:generate` - Generate Prisma client
+- `npm run db:migrate` - Run database migrations
+- `npm run db:push` - Push schema changes without migrations
+- `npm run db:seed` - Seed database with sample data
+- `npm run db:studio` - Open Prisma Studio GUI
+- `npm run db:reset` - Reset database (⚠️ destructive)
+
+### Testing & Quality
+- `npm test` - Run tests
+- `npm run test:watch` - Run tests in watch mode
+- `npm run lint` - Lint TypeScript code
+- `npm run typecheck` - Type check without building
+
+### Docker
+- `npm run docker:up` - Start services with docker-compose
+- `npm run docker:down` - Stop docker-compose services
+- `npm run docker:logs` - View docker logs
+- `npm run docker:build` - Rebuild docker images
+
+## 🌱 Seed Data
+
+After running `npm run db:seed`, you'll have:
+
+- **4 Repo Profiles** (Next.js, NestJS, Express, React)
+- **2 Pipeline Templates** (GitHub Actions, Railway)
+- **2 Generation Jobs** (with sample generated files)
+
+Demo profiles:
+- Next.js E-commerce App (TypeScript, DB, Docker, Railway + Vercel)
+- NestJS API Service (TypeScript, DB, Docker, Railway)
+- Express REST API (JavaScript, no DB, no Docker)
+- React Dashboard (TypeScript, Docker, Vercel)
+
+## 🏗️ Project Structure
 
 ```
 ai-ci-cd-pipeline-wizard/
 ├── backend/
+│   ├── lib/
+│   │   ├── errors.ts           # Centralized error handling
+│   │   ├── errors.test.ts      # Error tests
+│   │   └── test-helpers.ts     # Test utilities
 │   ├── routes/
-│   │   ├── profiles.ts      # Repo profile endpoints
-│   │   └── generation.ts    # Generation endpoints
+│   │   ├── profiles.ts         # Profile CRUD endpoints
+│   │   └── generation.ts       # Generation endpoints
 │   ├── services/
-│   │   └── llm-generator.ts # OpenAI integration
-│   ├── db.ts               # Prisma client
-│   └── server.ts           # Fastify server
+│   │   ├── llm-generator.ts    # OpenAI integration
+│   │   └── llm-generator.test.ts
+│   ├── db.ts                   # Prisma client
+│   └── server.ts               # Fastify server setup
 ├── frontend/
 │   ├── app/
 │   │   ├── components/
@@ -318,101 +372,135 @@ ai-ci-cd-pipeline-wizard/
 │   │   └── globals.css
 │   └── package.json
 ├── prisma/
-│   └── schema.prisma       # Database schema
-├── generated/              # Generated pipeline files (gitignored)
-├── package.json
-└── README.md
+│   ├── migrations/             # Database migrations
+│   ├── schema.prisma           # Database schema
+│   └── seed.ts                 # Seed script
+├── generated/                  # Generated configs (gitignored)
+├── docker-compose.yml          # Multi-container setup
+├── Dockerfile                  # Backend container
+├── vitest.config.ts            # Test configuration
+└── package.json
 ```
 
-## 🗄️ Database Schema
+## 🔮 Future Extensions
 
-### RepoProfile
-- `id`: Unique identifier
-- `name`: Project name
-- `githubUrl`: Optional GitHub repository URL
-- `language`: Programming language
-- `framework`: Framework being used
-- `usesDB`: Boolean for database usage
-- `usesDocker`: Boolean for Docker usage
-- `deployTargetsJson`: JSON array of deployment targets
+### Phase 3+ Roadmap
 
-### PipelineTemplate
-- `id`: Unique identifier
-- `name`: Template name
-- `provider`: Platform (github-actions, railway, vercel)
-- `yamlText`: Template content
-- `metaJson`: Additional metadata
+1. **Enhanced Domain Model**
+   - Add `ConfigTemplate` versioning
+   - Support for custom template overrides
+   - Template marketplace/sharing
 
-### GenerationJob
-- `id`: Unique identifier
-- `repoProfileId`: Reference to repo profile
-- `generatedFilesJson`: JSON object with generated files
-- `createdAt`: Timestamp
+2. **Additional Integrations**
+   - GitLab CI support
+   - CircleCI configuration
+   - Jenkins pipeline generation
+   - Terraform/IaC generation
 
-## 🛠️ Development
+3. **Advanced Features**
+   - GitHub App integration for direct PR creation
+   - Real-time pipeline validation
+   - Cost estimation for cloud deployments
+   - Security scanning integration (Snyk, Dependabot)
 
-### Database Management
+4. **Extension Points**
+   - Plugin system for custom generators
+   - Webhook notifications
+   - Metrics and analytics dashboard
+   - Template rating and feedback system
 
-```bash
-# Open Prisma Studio (database GUI)
-npm run prisma:studio
+5. **Quality Enhancements**
+   - E2E tests with Playwright
+   - Performance benchmarking
+   - Multi-language support (i18n)
+   - Advanced logging and monitoring
 
-# Create a new migration
-npm run prisma:migrate
+6. **Developer Experience**
+   - CLI tool for generation without UI
+   - VSCode extension
+   - Template preview before generation
+   - Diff view for regeneration
 
-# Reset database (WARNING: deletes all data)
-npx prisma migrate reset
-```
+## 🔧 Configuration
 
-### Testing the API
+### Environment Variables
 
-Use the included example requests or tools like Postman/Insomnia to test the API endpoints.
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | Yes | - |
+| `OPENAI_API_KEY` | OpenAI API key | Yes | - |
+| `PORT` | Backend server port | No | 3001 |
 
-## 📝 Environment Variables
+### Database Schema
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `DATABASE_URL` | PostgreSQL connection string | Yes |
-| `OPENAI_API_KEY` | OpenAI API key for LLM generation | Yes |
-| `PORT` | Backend server port (default: 3001) | No |
+The application uses Prisma for database management. To modify the schema:
 
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📄 License
-
-MIT License - feel free to use this project for your own purposes.
+1. Edit `prisma/schema.prisma`
+2. Run `npm run db:migrate` to create a migration
+3. Run `npm run db:generate` to update Prisma client
 
 ## 🐛 Troubleshooting
 
 ### Database Connection Issues
-- Ensure PostgreSQL is running
-- Verify DATABASE_URL in `.env` is correct
-- Check that the database exists
+
+```bash
+# Check if PostgreSQL is running
+docker compose ps
+
+# View database logs
+docker compose logs db
+
+# Reset database if needed
+npm run db:reset
+```
 
 ### OpenAI API Errors
-- Verify your OPENAI_API_KEY is valid
-- Check you have sufficient API credits
-- Ensure you have access to the GPT-4 model
+
+- Verify your API key is valid
+- Check you have sufficient credits
+- Ensure you have access to GPT-4 (or modify code to use GPT-3.5)
 
 ### Port Conflicts
-- If port 3000 or 3001 is in use, change the ports in the respective configs
-- Frontend: `frontend/package.json` dev script
-- Backend: `.env` PORT variable
 
-## 🎓 Learn More
+```bash
+# If ports 3000/3001 are in use, change them in:
+# - .env (PORT=3001)
+# - frontend/package.json (dev script)
+# - docker-compose.yml
+```
 
-- [Fastify Documentation](https://www.fastify.io/)
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Prisma Documentation](https://www.prisma.io/docs)
-- [OpenAI API Documentation](https://platform.openai.com/docs)
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+### Migration Issues
+
+```bash
+# If migrations fail, try pushing schema directly (development only)
+npm run db:push
+
+# Or reset and remigrate
+npm run db:reset
+npm run db:migrate
+```
+
+## 📄 License
+
+MIT License - See LICENSE file for details
+
+## 🤝 Contributing
+
+Contributions welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new functionality
+4. Ensure all tests pass (`npm test`)
+5. Submit a pull request
 
 ## 📧 Support
 
-If you have any questions or run into issues, please open an issue on GitHub.
+For issues and questions:
+- Open an issue on GitHub
+- Check existing issues for solutions
+- Review troubleshooting section above
 
 ---
 
-Built with ❤️ using AI and modern web technologies
+**Built with ❤️ using AI and modern web technologies**

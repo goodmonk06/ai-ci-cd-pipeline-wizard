@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../db';
 import { LLMGenerator } from '../services/llm-generator';
+import { NotFoundError, ValidationError } from '../lib/errors';
 
 const GenerateSchema = z.object({
   repoProfileId: z.string().optional(),
@@ -20,70 +21,67 @@ export async function generationRoutes(server: FastifyInstance) {
 
   // Generate pipeline configurations
   server.post('/', async (request, reply) => {
-    try {
-      const data = GenerateSchema.parse(request.body);
-
-      // Create or use existing repo profile
-      let repoProfile;
-      if (data.repoProfileId) {
-        repoProfile = await prisma.repoProfile.findUnique({
-          where: { id: data.repoProfileId },
-        });
-        if (!repoProfile) {
-          return reply.code(404).send({ error: 'Repo profile not found' });
-        }
-      } else {
-        // Create new profile
-        repoProfile = await prisma.repoProfile.create({
-          data: {
-            name: data.name,
-            githubUrl: data.githubUrl,
-            language: data.language,
-            framework: data.framework,
-            usesDB: data.usesDB,
-            usesDocker: data.usesDocker,
-            deployTargetsJson: JSON.stringify(data.deployTargets),
-          },
-        });
-      }
-
-      // Generate pipeline files using LLM
-      const files = await generator.generatePipelines({
-        framework: data.framework,
-        language: data.language,
-        usesDB: data.usesDB,
-        database: data.database,
-        usesDocker: data.usesDocker,
-        deployTargets: data.deployTargets,
-      });
-
-      // Save files to disk
-      await generator.saveGeneratedFiles(repoProfile.id, files);
-
-      // Create generation job record
-      const job = await prisma.generationJob.create({
-        data: {
-          repoProfileId: repoProfile.id,
-          generatedFilesJson: JSON.stringify(
-            files.map((f) => ({ path: f.path, content: f.content }))
-          ),
-        },
-        include: {
-          repoProfile: true,
-        },
-      });
-
-      return reply.code(201).send({
-        job,
-        files: files.map((f) => ({ path: f.path, content: f.content })),
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.code(400).send({ error: 'Validation error', details: error.errors });
-      }
-      server.log.error(error);
-      return reply.code(500).send({ error: 'Failed to generate pipeline configurations' });
+    const result = GenerateSchema.safeParse(request.body);
+    if (!result.success) {
+      throw new ValidationError('Invalid generation request', result.error.errors);
     }
+
+    const data = result.data;
+
+    // Create or use existing repo profile
+    let repoProfile;
+    if (data.repoProfileId) {
+      repoProfile = await prisma.repoProfile.findUnique({
+        where: { id: data.repoProfileId },
+      });
+      if (!repoProfile) {
+        throw new NotFoundError('Repo profile');
+      }
+    } else {
+      // Create new profile
+      repoProfile = await prisma.repoProfile.create({
+        data: {
+          name: data.name,
+          githubUrl: data.githubUrl,
+          language: data.language,
+          framework: data.framework,
+          usesDB: data.usesDB,
+          usesDocker: data.usesDocker,
+          deployTargetsJson: JSON.stringify(data.deployTargets),
+        },
+      });
+    }
+
+    // Generate pipeline files using LLM
+    const files = await generator.generatePipelines({
+      framework: data.framework,
+      language: data.language,
+      usesDB: data.usesDB,
+      database: data.database,
+      usesDocker: data.usesDocker,
+      deployTargets: data.deployTargets,
+    });
+
+    // Save files to disk
+    await generator.saveGeneratedFiles(repoProfile.id, files);
+
+    // Create generation job record
+    const job = await prisma.generationJob.create({
+      data: {
+        repoProfileId: repoProfile.id,
+        generatedFilesJson: JSON.stringify(
+          files.map((f) => ({ path: f.path, content: f.content }))
+        ),
+      },
+      include: {
+        repoProfile: true,
+      },
+    });
+
+    return reply.code(201).send({
+      job,
+      files: files.map((f) => ({ path: f.path, content: f.content })),
+    });
   });
 
   // Get generation job by ID
@@ -98,7 +96,7 @@ export async function generationRoutes(server: FastifyInstance) {
     });
 
     if (!job) {
-      return reply.code(404).send({ error: 'Generation job not found' });
+      throw new NotFoundError('Generation job');
     }
 
     return reply.send({
